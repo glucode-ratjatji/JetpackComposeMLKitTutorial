@@ -1,9 +1,8 @@
 package de.yanneckreiss.mlkittutorial.ui.camera
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Build
 import android.graphics.Color as AndroidColor
+import android.os.Build
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
@@ -14,18 +13,27 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -41,27 +49,37 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 
+// ---- Palette -------------------------------------------------------------
+private val PanelColor = Color(0xFF14171C)
+private val PanelMuted = Color(0xFF9AA3AF)
+private val AccentRed = Color(0xFFFF4D4F)
+private val ScrimColor = Color.Black.copy(alpha = 0.55f)
+
 @RequiresApi(Build.VERSION_CODES.Q)
 @Composable
-fun CameraScreen() {
-    CameraContent()
+fun CameraScreen(
+    onManualEntry: () -> Unit = {},
+    onCancel: () -> Unit = {}
+) {
+    CameraContent(onManualEntry = onManualEntry, onCancel = onCancel)
 }
 
 @RequiresApi(Build.VERSION_CODES.Q)
 @Composable
-private fun CameraContent() {
+private fun CameraContent(
+    onManualEntry: () -> Unit,
+    onCancel: () -> Unit
+) {
     val context: Context = LocalContext.current
     val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
     val cameraController: LifecycleCameraController = remember { LifecycleCameraController(context) }
     var detectedText: String by remember { mutableStateOf("No text detected yet..") }
 
-    // Regex to match integers or decimals right before optional spaces and "kWh" (case-insensitive)
+    // Integers or decimals directly before optional spaces and "kWh" (case-insensitive)
     val kwhRegex = remember { Regex("""(\d+(?:\.\d+)?)\s*[kK][wW][hH]""") }
 
-    // Extract the matched number, or show a fallback message if not found
     val extractedKwhValue = remember(detectedText) {
-        val matchResult = kwhRegex.find(detectedText)
-        matchResult?.groupValues?.get(1) ?: "No kWh value found"
+        kwhRegex.find(detectedText)?.groupValues?.get(1) ?: "No kWh value found"
     }
 
     fun onTextUpdated(updatedText: String) {
@@ -70,7 +88,14 @@ private fun CameraContent() {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = { TopAppBar(title = { Text("House Keeper") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("House Keeper", fontWeight = FontWeight.SemiBold) },
+                backgroundColor = PanelColor,
+                contentColor = Color.White,
+                elevation = 0.dp
+            )
+        },
     ) { paddingValues: PaddingValues ->
         Box(
             modifier = Modifier
@@ -78,11 +103,11 @@ private fun CameraContent() {
                 .padding(paddingValues),
             contentAlignment = Alignment.BottomCenter
         ) {
-            // 1. Camera Preview
+            // 1. Camera preview
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    PreviewView(context).apply {
+                factory = { ctx ->
+                    PreviewView(ctx).apply {
                         layoutParams = LinearLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT
@@ -92,7 +117,7 @@ private fun CameraContent() {
                         scaleType = PreviewView.ScaleType.FILL_START
                     }.also { previewView ->
                         startTextRecognition(
-                            context = context,
+                            context = ctx,
                             cameraController = cameraController,
                             lifecycleOwner = lifecycleOwner,
                             previewView = previewView,
@@ -101,106 +126,201 @@ private fun CameraContent() {
                     }
                 }
             )
-            //Column(modifier = Modifier.fillMaxSize()) {
-                // 2. Receptive Field Overlay (Viewfinder Box)
-                ReceptiveFieldOverlay()
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(16.dp)
-            ) {
-                // Extracted kWh Result in Red
-                Text(
-                    text = "Extracted kWh: $extractedKwhValue",
-                    style = TextStyle(
-                        color = Color.Red,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
+            ReceptiveFieldOverlay()
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Raw Detected Text Display
-                Text(
-                    text = detectedText,
-                    maxLines = 5,
-                    overflow = TextOverflow.Ellipsis,
-                    color = Color.Black
-                )
-            }
+            BottomPanel(
+                extractedKwhValue = extractedKwhValue,
+                detectedText = detectedText,
+                onManualEntry = onManualEntry,
+                onCancel = onCancel
+            )
         }
     }
 }
 
-/**
- * Draws a dark translucent overlay with a clear rectangular cutout representing
- * the receptive field where the meter should be placed.
- */
-@RequiresApi(Build.VERSION_CODES.Q)
-@SuppressLint("ComposeModifierMissing")
 @Composable
-fun ReceptiveFieldOverlay() {
-    val textMeasurer = rememberTextMeasurer()
-    Canvas(
+private fun BottomPanel(
+    extractedKwhValue: String,
+    detectedText: String,
+    onManualEntry: () -> Unit,
+    onCancel: () -> Unit
+) {
+    Column(
         modifier = Modifier
-            .fillMaxSize()
-            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-     ) {
-        val canvasWidth = size.width
-        val canvasHeight = size.height
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+            .background(PanelColor)
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 20.dp)
+    ) {
+        // Actions sit above the red result text
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(
+                onClick = onManualEntry,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color.White,
+                    contentColor = Color.Black
+                )
+            ) {
+                Text("Manual entry", fontWeight = FontWeight.SemiBold)
+            }
 
-        // Define the dimensions of the receptive box (e.g., width 80% of screen, height 200px)
-        val boxWidth = canvasWidth * 0.8f
-        val boxHeight = canvasHeight* 0.5f
-        val left = (canvasWidth - boxWidth) / 2f
-        val top = (canvasHeight - boxHeight) / 2f
+            OutlinedButton(
+                onClick = onCancel,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                shape = RoundedCornerShape(14.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    backgroundColor = Color.Transparent,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Cancel", fontWeight = FontWeight.SemiBold)
+            }
+        }
 
+        Spacer(modifier = Modifier.height(18.dp))
 
-
-        val textLayoutResult = textMeasurer.measure(
-            text = "Centre electricity Meter in the frame",
+        // Extracted kWh result in red
+        Text(
+            text = "Extracted kWh: $extractedKwhValue",
             style = TextStyle(
-                color = Color.Black,
-                fontSize = 24.sp
+                color = AccentRed,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
             )
         )
 
+        Spacer(modifier = Modifier.height(6.dp))
 
-        // Draw dark background
-        drawRect(color = Color.Black.copy(alpha = 0.15f))
+        // Raw detected text, quieter
+        Text(
+            text = detectedText,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            style = TextStyle(color = PanelMuted, fontSize = 13.sp)
+        )
+    }
+}
 
-        // Cut out the clear scanning window using BlendMode.Clear
+/**
+ * Dim scrim with a clear scanning window. Instead of a full outline, only the four
+ * corners are drawn in white as rounded L-shaped brackets.
+ */
+@Composable
+fun ReceptiveFieldOverlay(modifier: Modifier = Modifier) {
+    val textMeasurer = rememberTextMeasurer()
+    Canvas(
+        modifier = modifier
+            .fillMaxSize()
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    ) {
+        val boxWidth = size.width * 0.82f
+        val boxHeight = size.height * 0.30f
+        val left = (size.width - boxWidth) / 2f
+        // Sit slightly above centre so the bottom panel never covers the frame
+        val top = size.height * 0.30f
+
+        // Scrim, then punch out the window
+        drawRect(color = ScrimColor)
         drawRoundRect(
             color = Color.Transparent,
             topLeft = Offset(left, top),
             size = Size(boxWidth, boxHeight),
-            cornerRadius = CornerRadius(16f, 16f),
-            blendMode = BlendMode.Clear
-        )
-        // Draw a border around the receptive field for visual guidance
-        drawText(
-            textLayoutResult = textLayoutResult,
-            topLeft = Offset(x = 100f, y = top-200) // Position coordinates
-        )
-        drawRoundRect(
-            color = Color.Red,
-            topLeft = Offset(left, top),
-            size = Size(boxWidth, boxHeight),
-            cornerRadius = CornerRadius(16f, 16f),
+            cornerRadius = CornerRadius(28.dp.toPx(), 28.dp.toPx()),
             blendMode = BlendMode.Clear
         )
 
-        drawRoundRect(
-            color = Color.White,
-            topLeft = Offset(left, top),
-            size = Size(boxWidth, boxHeight),
-            cornerRadius = CornerRadius(16f, 16f),
-            style = Stroke(width = 8f),
+        // Four white corners
+        drawCornerBrackets(
+            left = left,
+            top = top,
+            width = boxWidth,
+            height = boxHeight,
+            armLength = 36.dp.toPx(),
+            radius = 28.dp.toPx(),
+            strokeWidth = 4.dp.toPx()
+        )
+
+        // Hint above the frame
+        val hint = textMeasurer.measure(
+            text = "Centre the electricity meter in the frame",
+            style = TextStyle(
+                color = Color.White,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium
+            )
+        )
+        drawText(
+            textLayoutResult = hint,
+            topLeft = Offset(
+                x = (size.width - hint.size.width) / 2f,
+                y = top - hint.size.height - 20.dp.toPx()
+            )
         )
     }
+}
+
+private fun DrawScope.drawCornerBrackets(
+    left: Float,
+    top: Float,
+    width: Float,
+    height: Float,
+    armLength: Float,
+    radius: Float,
+    strokeWidth: Float
+) {
+    val right = left + width
+    val bottom = top + height
+    val stroke = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    val white = Color.White
+
+    // Top-left
+    drawPath(
+        Path().apply {
+            moveTo(left, top + armLength)
+            lineTo(left, top + radius)
+            quadraticBezierTo(left, top, left + radius, top)
+            lineTo(left + armLength, top)
+        }, white, style = stroke
+    )
+    // Top-right
+    drawPath(
+        Path().apply {
+            moveTo(right - armLength, top)
+            lineTo(right - radius, top)
+            quadraticBezierTo(right, top, right, top + radius)
+            lineTo(right, top + armLength)
+        }, white, style = stroke
+    )
+    // Bottom-right
+    drawPath(
+        Path().apply {
+            moveTo(right, bottom - armLength)
+            lineTo(right, bottom - radius)
+            quadraticBezierTo(right, bottom, right - radius, bottom)
+            lineTo(right - armLength, bottom)
+        }, white, style = stroke
+    )
+    // Bottom-left
+    drawPath(
+        Path().apply {
+            moveTo(left + armLength, bottom)
+            lineTo(left + radius, bottom)
+            quadraticBezierTo(left, bottom, left, bottom - radius)
+            lineTo(left, bottom - armLength)
+        }, white, style = stroke
+    )
 }
 
 private fun startTextRecognition(
