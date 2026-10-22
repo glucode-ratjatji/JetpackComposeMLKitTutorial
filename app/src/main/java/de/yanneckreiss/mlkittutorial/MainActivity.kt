@@ -1,8 +1,10 @@
 package de.yanneckreiss.mlkittutorial
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -12,6 +14,7 @@ import de.yanneckreiss.mlkittutorial.ui.theme.JetpackComposeMLKitTutorialTheme
 
 class MainActivity : ComponentActivity() {
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -21,7 +24,13 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen()
+                    AppNavHost()
+                    //MainScreen()
+//                    MeterSelectionScreen(
+//                        onNavigateToElectricity = { MainScreen()},
+//                        onNavigateToWater = { },
+//                        onNavigateToGas = { },
+//                    )
                 }
             }
         }

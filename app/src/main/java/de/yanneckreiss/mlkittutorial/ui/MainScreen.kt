@@ -2,6 +2,8 @@
 
 package de.yanneckreiss.mlkittutorial.ui
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -11,6 +13,8 @@ import com.google.accompanist.permissions.rememberPermissionState
 import de.yanneckreiss.mlkittutorial.ui.camera.CameraScreen
 import de.yanneckreiss.mlkittutorial.ui.no_permission.NoPermissionScreen
 
+
+@RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 fun MainScreen() {
 
@@ -22,6 +26,7 @@ fun MainScreen() {
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 private fun MainContent(
     hasPermission: Boolean,
@@ -35,6 +40,7 @@ private fun MainContent(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.Q)
 @Preview
 @Composable
 private fun Preview_MainContent() {
