@@ -42,7 +42,7 @@ fun AppNavHost() {
 
         // Electricity Screen (Triggers your ML Kit Camera View)
         composable(AppRoutes.ELECTRICITY_CAMERA) {
-            MainScreen()
+            MainScreen() 
 //            CustomTopAppBar(
 //                onBackClick = { navController.popBackStack() }
 //            )
