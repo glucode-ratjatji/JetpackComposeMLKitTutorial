@@ -27,7 +27,7 @@ fun MeterSelectionScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             TopAppBar(
-                title = { Text("House Keeper 🤵‍♂️") },
+                title = { Text("House Check🤵‍♂️") },
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             // Electricity Card
