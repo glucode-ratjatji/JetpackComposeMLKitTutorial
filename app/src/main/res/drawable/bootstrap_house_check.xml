@@ -1,0 +1,36 @@
+<!--
+The MIT License (MIT)
+
+Copyright (c) 2019-2024 The Bootstrap Authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+
+    <path
+        android:fillColor="@android:color/holo_blue_light"
+        android:pathData="M7.293,1.5a1,1 0 0,1 1.414,0L11,3.793V2.5a0.5,0.5 0 0,1 0.5,-0.5h1a0.5,0.5 0 0,1 0.5,0.5v3.293l2.354,2.353a0.5,0.5 0 0,1 -0.708,0.708L8,2.207l-5,5V13.5a0.5,0.5 0 0,0 0.5,0.5h4a0.5,0.5 0 0,1 0,1h-4A1.5,1.5 0 0,1 2,13.5V8.207l-0.646,0.647a0.5,0.5 0 1,1 -0.708,-0.708Z" />
+    <path
+        android:fillColor="@android:color/holo_blue_light"
+        android:pathData="M12.5,16a3.5,3.5 0 1,0 0,-7a3.5,3.5 0 0,0 0,7m1.679,-4.493l-1.335,2.226a0.75,0.75 0 0,1 -1.174,0.144l-0.774,-0.773a0.5,0.5 0 0,1 0.708,-0.707l0.547,0.547l1.17,-1.951a0.5,0.5 0 1,1 0.858,0.514" />
+</vector>

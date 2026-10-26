@@ -90,7 +90,7 @@ private fun CameraContent(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("House Keeper", fontWeight = FontWeight.SemiBold) },
+                title = { Text("House Check", fontWeight = FontWeight.SemiBold) },
                 backgroundColor = PanelColor,
                 contentColor = Color.White,
                 elevation = 0.dp
