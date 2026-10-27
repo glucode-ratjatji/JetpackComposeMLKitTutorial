@@ -2,50 +2,34 @@
 
 package de.yanneckreiss.mlkittutorial.ui
 
+import android.Manifest
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
 import de.yanneckreiss.mlkittutorial.ui.camera.CameraScreen
 import de.yanneckreiss.mlkittutorial.ui.no_permission.NoPermissionScreen
 
 
 @RequiresApi(Build.VERSION_CODES.Q)
 @Composable
-fun MainScreen() {
-
-    val cameraPermissionState: PermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
-
-    MainContent(
-        hasPermission = cameraPermissionState.status.isGranted,
-        onRequestPermission = cameraPermissionState::launchPermissionRequest
-    )
-}
-
-@RequiresApi(Build.VERSION_CODES.Q)
-@Composable
-private fun MainContent(
-    hasPermission: Boolean,
-    onRequestPermission: () -> Unit
+fun MainScreen(
+    viewModel: EntryViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit
 ) {
+    val cameraPermissionState: PermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
-    if (hasPermission) {
-        CameraScreen()
+    if (cameraPermissionState.status.isGranted) {
+        CameraScreen(
+            viewModel = viewModel,
+            onNavigateBack = onNavigateBack
+        )
     } else {
-        NoPermissionScreen(onRequestPermission)
+        NoPermissionScreen(cameraPermissionState::launchPermissionRequest)
     }
-}
-
-@RequiresApi(Build.VERSION_CODES.Q)
-@Preview
-@Composable
-private fun Preview_MainContent() {
-    MainContent(
-        hasPermission = true,
-        onRequestPermission = {}
-    )
 }

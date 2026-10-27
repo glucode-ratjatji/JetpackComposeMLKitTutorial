@@ -51,6 +51,7 @@ android {
 
 dependencies {
 //    implementation(libs.androidx.room.ktx)
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
     // MockK for creating fake objects
     testImplementation("io.mockk:mockk:1.13.8")
 
@@ -59,8 +60,6 @@ dependencies {
 
     // Core testing architecture for ViewModels (LiveData/StateFlow)
     testImplementation("androidx.arch.core:core-testing:2.2.0")
-
-    //implementation(platform(libs.androidx.compose.bom))
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
     //implementation("androidx.lifecycle:lifecycle-livedata:2.11.0-ktx:2.11.0")

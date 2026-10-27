@@ -10,18 +10,18 @@ class EntryRepositoryImpl @Inject constructor(
     private val entryDao: EntryDao
 ) : IEntryRepository {
 
-    override fun getAllEntrys(): Flow<List<Entry>> {
+    override fun getAllEntries(): Flow<List<Entry>> {
         return entryDao.getAll()
     }
 
     override suspend fun insertEntry(newEntry: Entry): Flow<List<Entry>> {
         entryDao.insertAll(newEntry)
-        return getAllEntrys()
+        return getAllEntries()
     }
 
     override suspend fun deleteEntry(entry: Entry): Flow<List<Entry>> {
         entryDao.delete(entry)
-        return getAllEntrys()
+        return getAllEntries()
     }
 
     override suspend fun updateEntry(entry: Entry) {

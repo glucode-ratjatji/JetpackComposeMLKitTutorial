@@ -9,9 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import de.yanneckreiss.mlkittutorial.ui.MainScreen
+import dagger.hilt.android.AndroidEntryPoint
 import de.yanneckreiss.mlkittutorial.ui.theme.JetpackComposeMLKitTutorialTheme
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -25,12 +26,6 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     AppNavHost()
-                    //MainScreen()
-//                    MeterSelectionScreen(
-//                        onNavigateToElectricity = { MainScreen()},
-//                        onNavigateToWater = { },
-//                        onNavigateToGas = { },
-//                    )
                 }
             }
         }
