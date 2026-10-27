@@ -6,15 +6,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
 import de.yanneckreiss.mlkittutorial.ui.MainScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("ComposeModifierMissing")
+@SuppressLint("ComposeModifierMissing", "ComposeViewModelInjection")
 @Composable
 fun MeterSelectionScreen(
     onNavigateToElectricity: () -> Unit,
     onNavigateToWater: () -> Unit,
     onNavigateToGas: () -> Unit,
+    onNavigateToHistory: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -51,6 +54,13 @@ fun MeterSelectionScreen(
                 header = "Log Gas exchange",
                 description = "Record when you last changed your gas cylinder.",
                 onClick =  onNavigateToGas
+            )
+
+            MeterNavigationCard(
+                emoji = "📊️",
+                header = "View History",
+                description = "View previous logged entries.",
+                onClick =  onNavigateToHistory
             )
         }
     }
