@@ -6,7 +6,12 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+<<<<<<< Updated upstream
 import de.yanneckreiss.mlkittutorial.ui.CustomTopAppBar
+=======
+import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
+import de.yanneckreiss.mlkittutorial.gas.ui.GasCylinderTrackerScreen
+>>>>>>> Stashed changes
 import de.yanneckreiss.mlkittutorial.ui.MainScreen
 
 object AppRoutes {
@@ -53,9 +58,12 @@ fun AppNavHost() {
             // TODO: Add your Water Meter logging screen here
         }
 
-        // Placeholder for Gas Screen
+        // Gas Cylinder & Meter Logging Screen
         composable(AppRoutes.GAS_METER) {
-            // TODO: Add your Gas Meter logging screen here
+            GasCylinderTrackerScreen(
+                entryViewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

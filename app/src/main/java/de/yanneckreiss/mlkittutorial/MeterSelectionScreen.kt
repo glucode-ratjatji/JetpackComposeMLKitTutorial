@@ -45,12 +45,12 @@ fun MeterSelectionScreen(
                 description = "Record current cubic meter (m³) readings to monitor consumption.",
                 onClick =  onNavigateToWater
             )
-            // Water Card
+            // Gas Cylinder Card
             MeterNavigationCard(
                 emoji = "♨️",
-                header = "Log Gas exchange",
-                description = "Record when you last changed your gas cylinder.",
-                onClick =  onNavigateToGas
+                header = "Gas Cylinder & Usage Tracker",
+                description = "Track propane cylinder exchanges (4, 9, 14, 48kg) & annual gas usage.",
+                onClick = onNavigateToGas
             )
         }
     }
