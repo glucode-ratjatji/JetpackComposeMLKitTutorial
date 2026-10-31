@@ -7,6 +7,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.minus
 import kotlinx.datetime.isoDayNumber
+
 @Entity(tableName = "entry")
 data class Entry(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -30,7 +31,28 @@ data class Entry(
     @ColumnInfo(name = "entry_visibility_kms") val visibilityKms: Double = 0.0,
 
     @ColumnInfo(name = "entry_description") val description: String = ""
-)
+) {
+    /**
+     * Dynamically determines how many units were consumed in this period/reading
+     * from existing Room database records.
+     */
+    val unitsUsed: Double
+        get() = when {
+            unitsConsumedSinceLastVisit > 0.0 -> unitsConsumedSinceLastVisit
+            previousReadingValue > 0.0 && meterReading >= previousReadingValue -> meterReading - previousReadingValue
+            else -> meterReading
+        }
+
+    /**
+     * Infers utility type (Electricity, Water, or Gas) from description tags or keywords,
+     * defaulting to Electricity if unspecified in legacy records.
+     */
+    val detectedUtilityType: UtilityType
+        get() = UtilityType.fromString(description)
+
+    val unitLabel: String
+        get() = detectedUtilityType.defaultUnit
+}
 
 fun LocalDate.toStartOfWeek(): LocalDate {
     val daysToSubtract = this.dayOfWeek.isoDayNumber - 1

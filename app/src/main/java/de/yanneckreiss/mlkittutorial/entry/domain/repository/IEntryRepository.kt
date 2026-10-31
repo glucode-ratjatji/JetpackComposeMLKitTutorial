@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.Flow
 interface IEntryRepository {
     fun getAllEntries(): Flow<List<Entry>>
     suspend fun insertEntry(newEntry: Entry): Flow<List<Entry>>
+    suspend fun insertList(entries: List<Entry>)
     suspend fun deleteEntry(entry: Entry): Flow<List<Entry>>
+    suspend fun deleteById(id: Int)
     suspend fun updateEntry(entry: Entry)
+    suspend fun seedSampleData()
 }

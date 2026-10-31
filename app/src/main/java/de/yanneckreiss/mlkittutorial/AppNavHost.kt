@@ -4,13 +4,12 @@ import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
+import de.yanneckreiss.mlkittutorial.entry.data.local.UtilityType
 import de.yanneckreiss.mlkittutorial.ui.MainScreen
 import de.yanneckreiss.mlkittutorial.view.EntriesHistoryScreen
 
@@ -25,7 +24,6 @@ object AppRoutes {
 @SuppressLint("ComposeViewModelInjection")
 @RequiresApi(Build.VERSION_CODES.Q)
 @Composable
-
 fun AppNavHost(viewModel: EntryViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     NavHost(
@@ -39,18 +37,23 @@ fun AppNavHost(viewModel: EntryViewModel = hiltViewModel()) {
                     navController.navigate(AppRoutes.ELECTRICITY_CAMERA)
                 },
                 onNavigateToWater = {
+                    viewModel.setUtilityFilter(UtilityType.WATER)
+                    viewModel.setShowAddDialog(true)
                     navController.navigate(AppRoutes.WATER_METER)
                 },
                 onNavigateToGas = {
+                    viewModel.setUtilityFilter(UtilityType.GAS)
+                    viewModel.setShowAddDialog(true)
                     navController.navigate(AppRoutes.GAS_METER)
                 },
                 onNavigateToHistory = {
+                    viewModel.setUtilityFilter(null)
                     navController.navigate(AppRoutes.ENTRIES_HISTORY)
                 }
             )
         }
 
-        // Electricity Screen (Triggers your ML Kit Camera View)
+        // Electricity Screen (Triggers ML Kit Camera View)
         composable(AppRoutes.ELECTRICITY_CAMERA) {
             MainScreen(
                 viewModel = viewModel,
@@ -58,15 +61,24 @@ fun AppNavHost(viewModel: EntryViewModel = hiltViewModel()) {
             )
         }
 
-        // Placeholder for Water Screen
+        // Water Screen (routes directly to history with water filter)
         composable(AppRoutes.WATER_METER) {
-            // TODO: Add your Water Meter logging screen here
+            viewModel.setUtilityFilter(UtilityType.WATER)
+            EntriesHistoryScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
-        // Placeholder for Gas Screen
+        // Gas Screen (routes directly to history with gas filter)
         composable(AppRoutes.GAS_METER) {
-            // TODO: Add your Gas Meter logging screen here
+            viewModel.setUtilityFilter(UtilityType.GAS)
+            EntriesHistoryScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
+
         composable(AppRoutes.ENTRIES_HISTORY) {
             EntriesHistoryScreen(
                 viewModel = viewModel,
