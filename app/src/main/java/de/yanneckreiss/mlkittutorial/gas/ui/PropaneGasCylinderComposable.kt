@@ -61,17 +61,17 @@ fun PropaneGasCylinderComposable(
     // Dynamic sizing based on weight
     val targetHeight: Dp = when (cylinder.sizeKg) {
         4 -> 190.dp
-        9 -> 235.dp
-        14 -> 275.dp
-        48 -> 325.dp
-        else -> 235.dp
+        9 -> 225.dp
+        14 -> 265.dp
+        48 -> 305.dp
+        else -> 225.dp
     }
 
     val animatedHeight by animateDpAsState(
         targetValue = targetHeight,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            stiffness = Spring.StiffnessMediumLow
         ),
         label = "cylinderHeight"
     )
@@ -470,13 +470,9 @@ private fun CylinderDecalLabel(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "🔥",
-                    fontSize = 11.sp
-                )
                 Spacer(modifier = Modifier.width(3.dp))
                 Text(
-                    text = "PROPANE",
+                    text = "CYLINDER SIZE",
                     color = Color(0xFFC62828),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -492,15 +488,6 @@ private fun CylinderDecalLabel(
                 fontWeight = FontWeight.Black,
                 letterSpacing = (-0.5).sp,
                 lineHeight = 18.sp
-            )
-
-            // Stamped Spec Line
-            Text(
-                text = "LPG • UN 1978",
-                color = Color(0xFF757575),
-                fontSize = 8.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 0.5.sp
             )
         }
     }
