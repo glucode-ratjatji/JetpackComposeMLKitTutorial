@@ -9,7 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
-import de.yanneckreiss.mlkittutorial.entry.data.local.UtilityType
+import de.yanneckreiss.mlkittutorial.gas.ui.GasCylinderTrackerScreen
 import de.yanneckreiss.mlkittutorial.ui.MainScreen
 import de.yanneckreiss.mlkittutorial.view.EntriesHistoryScreen
 import de.yanneckreiss.mlkittutorial.view.WaterTrackerScreen
@@ -72,20 +72,10 @@ fun AppNavHost(viewModel: EntryViewModel = hiltViewModel()) {
             )
         }
 
-        // Gas Screen: routes to ledger with Gas filter & dialog
+        // Gas Cylinder & Meter Logging Screen
         composable(AppRoutes.GAS_METER) {
-            viewModel.setUtilityFilter(UtilityType.GAS)
-            viewModel.setShowAddDialog(true)
-            EntriesHistoryScreen(
-                viewModel = viewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        // Tabular Usage Ledger, Graphs & Weather Correlation
-        composable(AppRoutes.ENTRIES_HISTORY) {
-            EntriesHistoryScreen(
-                viewModel = viewModel,
+            GasCylinderTrackerScreen(
+                entryViewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

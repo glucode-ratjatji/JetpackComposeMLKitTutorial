@@ -117,21 +117,12 @@ fun MeterSelectionScreen(
                 description = "Snap water meter photo & input reading to estimate usage.",
                 onClick = onNavigateToWater
             )
-
-            // Gas Card
+            // Gas Cylinder Card
             MeterNavigationCard(
-                icon = Icons.Default.LocalFireDepartment,
-                header = "Log Gas exchange",
-                description = "Record propane cylinder exchange weight (kg) & burn rate.",
+                emoji = "♨️",
+                header = "Gas Cylinder & Usage Tracker",
+                description = "Track propane cylinder exchanges (4, 9, 14, 48kg) & annual gas usage.",
                 onClick = onNavigateToGas
-            )
-
-            // History / Tabular View Card
-            MeterNavigationCard(
-                icon = Icons.Default.BarChart,
-                header = "View Usage Ledger & Analytics",
-                description = "Tabular records, actual vs estimated usage trends & weather scores.",
-                onClick = onNavigateToHistory
             )
         }
     }
