@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import de.yanneckreiss.mlkittutorial.entry.data.local.Entry
 import de.yanneckreiss.mlkittutorial.entry.data.local.EntryDao
 
-@Database(entities = [Entry::class], version = 1)
+@Database(entities = [Entry::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun entryDao(): EntryDao
 }

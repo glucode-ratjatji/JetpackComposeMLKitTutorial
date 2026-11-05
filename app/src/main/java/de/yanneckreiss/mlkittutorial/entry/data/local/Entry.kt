@@ -3,6 +3,10 @@ package de.yanneckreiss.mlkittutorial.entry.data.local
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.minus
+import kotlinx.datetime.isoDayNumber
 
 @Entity(tableName = "entry")
 data class Entry(
@@ -13,7 +17,6 @@ data class Entry(
     @ColumnInfo(name = "entry_monthKey") val monthKey: String = "",
 
     @ColumnInfo(name = "entry_meterReading") val meterReading: Double = 0.0,
-    @ColumnInfo(name = "entry_rawOcrText") val rawOcrText: String = "",
     @ColumnInfo(name = "entry_image_uri") val imageUri: String = "",
 
     @ColumnInfo(name = "entry_previous_reading_value") val previousReadingValue: Double = 0.0,
@@ -27,6 +30,40 @@ data class Entry(
     @ColumnInfo(name = "entry_wind_speed_kms") val windSpeedKms: Double = 0.0,
     @ColumnInfo(name = "entry_visibility_kms") val visibilityKms: Double = 0.0,
 
-    @ColumnInfo(name = "entry_description") val description: String = "",
-    @ColumnInfo(name = "entry_complete") val isComplete: Boolean = false
-)
+    @ColumnInfo(name = "entry_description") val description: String = ""
+) {
+    /**
+     * Dynamically determines how many units were consumed in this period/reading
+     * from existing Room database records.
+     */
+    val unitsUsed: Double
+        get() = when {
+            unitsConsumedSinceLastVisit > 0.0 -> unitsConsumedSinceLastVisit
+            previousReadingValue > 0.0 && meterReading >= previousReadingValue -> meterReading - previousReadingValue
+            else -> meterReading
+        }
+
+    /**
+     * Infers utility type (Electricity, Water, or Gas) from description tags or keywords,
+     * defaulting to Electricity if unspecified.
+     */
+    val detectedUtilityType: UtilityType
+        get() = UtilityType.fromString(description)
+
+    val unitLabel: String
+        get() = detectedUtilityType.defaultUnit
+
+    /**
+     * Visual indicator: distinguishes actual recorded entries from estimated/averaged data.
+     */
+    val isEstimated: Boolean
+        get() = description.contains("[Estimated]", ignoreCase = true)
+
+    val isActual: Boolean
+        get() = !isEstimated
+}
+
+fun LocalDate.toStartOfWeek(): LocalDate {
+    val daysToSubtract = this.dayOfWeek.isoDayNumber - 1
+    return this.minus(DatePeriod(days = daysToSubtract))
+}
