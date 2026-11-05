@@ -1,18 +1,27 @@
 package de.yanneckreiss.mlkittutorial.ui.components
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import de.yanneckreiss.mlkittutorial.entry.data.local.Entry
 import de.yanneckreiss.mlkittutorial.entry.domain.util.WeatherCorrelationEngine
 import java.util.Locale
 
+@SuppressLint("ComposeParameterOrder")
 @Composable
 fun WeatherBreakdownCard(
     entry: Entry,
@@ -23,7 +32,7 @@ fun WeatherBreakdownCard(
     val impact = remember(entry) { WeatherCorrelationEngine.analyzeImpact(entry) }
 
     Surface(
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
         modifier = modifier
             .fillMaxWidth()
@@ -58,13 +67,13 @@ fun WeatherBreakdownCard(
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer
+                    color = MaterialTheme.colorScheme.surface
                 ) {
                     Text(
                         text = "Score: ${String.format(Locale.US, "%.1f", entry.weatherScore)} / 10",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
@@ -72,7 +81,7 @@ fun WeatherBreakdownCard(
 
             // Meter Reading & Units Used Details Card
             Surface(
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -142,22 +151,22 @@ fun WeatherBreakdownCard(
                 }
             }
 
-            // Environmental Factors 3x2 Grid
+            // Environmental Factors Grid (No Emojis!)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MetricPill(
-                    icon = "🌡️",
+                    iconVector = Icons.Default.Thermostat,
                     label = "Ambient Temp",
                     value = "${entry.temperatureCelsius}°C",
                     modifier = Modifier.weight(1f)
                 )
                 MetricPill(
-                    icon = "💧",
+                    iconVector = Icons.Default.WaterDrop,
                     label = "Humidity",
                     value = "${impact.humidity.toInt()}%",
                     modifier = Modifier.weight(1f)
                 )
                 MetricPill(
-                    icon = "☁️",
+                    iconVector = Icons.Default.Cloud,
                     label = "Cloud Cover",
                     value = "${entry.cloudCoverage.toInt()}%",
                     modifier = Modifier.weight(1f)
@@ -166,19 +175,19 @@ fun WeatherBreakdownCard(
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MetricPill(
-                    icon = "🌧️",
+                    iconVector = null,
                     label = "Precipitation",
                     value = "${entry.precipitation} mm",
                     modifier = Modifier.weight(1f)
                 )
                 MetricPill(
-                    icon = "💨",
+                    iconVector = Icons.Default.Air,
                     label = "Wind Speed",
                     value = "${entry.windSpeedKms.toInt()} km/h",
                     modifier = Modifier.weight(1f)
                 )
                 MetricPill(
-                    icon = "👁️",
+                    iconVector = null,
                     label = "Visibility",
                     value = "${entry.visibilityKms.toInt()} km",
                     modifier = Modifier.weight(1f)
@@ -187,7 +196,7 @@ fun WeatherBreakdownCard(
 
             // Historical Correlation Narrative Box
             Surface(
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -201,18 +210,20 @@ fun WeatherBreakdownCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "🔬 Historical Spike Correlation",
+                            text = "Historical Spike Correlation",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         if (impact.loadSeverityPercentage > 0) {
+                            val isCritical = impact.loadSeverityPercentage > 30
+                            val textColor = if (isCritical) MaterialTheme.colorScheme.error else Color(0xFFF57F17)
                             Text(
                                 text = "±${impact.loadSeverityPercentage}% load delta",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.error
+                                color = textColor
                             )
                         }
                     }
@@ -229,7 +240,7 @@ fun WeatherBreakdownCard(
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                         )
                         Text(
-                            text = "📝 Log Note: ${entry.description}",
+                            text = "Log Note: ${entry.description}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -267,7 +278,7 @@ fun WeatherBreakdownCard(
 
 @Composable
 private fun MetricPill(
-    icon: String,
+    iconVector: ImageVector?,
     label: String,
     value: String,
     modifier: Modifier = Modifier
@@ -275,14 +286,21 @@ private fun MetricPill(
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
         modifier = modifier
     ) {
         Column(
             modifier = Modifier.padding(6.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = icon, style = MaterialTheme.typography.bodySmall)
+
+            if (iconVector != null) {
+                Icon(
+                    imageVector = iconVector,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
             Text(
                 text = value,
                 style = MaterialTheme.typography.labelMedium,

@@ -12,6 +12,7 @@ import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
 import de.yanneckreiss.mlkittutorial.entry.data.local.UtilityType
 import de.yanneckreiss.mlkittutorial.ui.MainScreen
 import de.yanneckreiss.mlkittutorial.view.EntriesHistoryScreen
+import de.yanneckreiss.mlkittutorial.view.WaterTrackerScreen
 
 object AppRoutes {
     const val METER_SELECTION = "meter_selection"
@@ -30,30 +31,32 @@ fun AppNavHost(viewModel: EntryViewModel = hiltViewModel()) {
         navController = navController,
         startDestination = AppRoutes.METER_SELECTION
     ) {
-        // Selection Screen (Home Hub)
+        // Selection Screen (Home Dashboard)
         composable(AppRoutes.METER_SELECTION) {
             MeterSelectionScreen(
                 onNavigateToElectricity = {
                     navController.navigate(AppRoutes.ELECTRICITY_CAMERA)
                 },
                 onNavigateToWater = {
-                    viewModel.setUtilityFilter(UtilityType.WATER)
-                    viewModel.setShowAddDialog(true)
                     navController.navigate(AppRoutes.WATER_METER)
                 },
                 onNavigateToGas = {
-                    viewModel.setUtilityFilter(UtilityType.GAS)
-                    viewModel.setShowAddDialog(true)
+//                    viewModel.setUtilityFilter(UtilityType.GAS)
+//                    viewModel.setShowAddDialog(true)
                     navController.navigate(AppRoutes.GAS_METER)
                 },
                 onNavigateToHistory = {
                     viewModel.setUtilityFilter(null)
                     navController.navigate(AppRoutes.ENTRIES_HISTORY)
+                },
+                onQuickLog = {
+                    viewModel.setShowAddDialog(true)
+                    navController.navigate(AppRoutes.ENTRIES_HISTORY)
                 }
             )
         }
 
-        // Electricity Screen (Triggers ML Kit Camera View)
+        // Electricity Camera Scanner Screen (CameraX + OCR)
         composable(AppRoutes.ELECTRICITY_CAMERA) {
             MainScreen(
                 viewModel = viewModel,
@@ -61,24 +64,25 @@ fun AppNavHost(viewModel: EntryViewModel = hiltViewModel()) {
             )
         }
 
-        // Water Screen (routes directly to history with water filter)
+        // Water Tracker Screen (CameraX Photo + Manual Input + Estimation)
         composable(AppRoutes.WATER_METER) {
-            viewModel.setUtilityFilter(UtilityType.WATER)
-            EntriesHistoryScreen(
+            WaterTrackerScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
 
-        // Gas Screen (routes directly to history with gas filter)
+        // Gas Screen: routes to ledger with Gas filter & dialog
         composable(AppRoutes.GAS_METER) {
             viewModel.setUtilityFilter(UtilityType.GAS)
+            viewModel.setShowAddDialog(true)
             EntriesHistoryScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
 
+        // Tabular Usage Ledger, Graphs & Weather Correlation
         composable(AppRoutes.ENTRIES_HISTORY) {
             EntriesHistoryScreen(
                 viewModel = viewModel,

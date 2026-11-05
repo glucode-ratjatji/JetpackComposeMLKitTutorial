@@ -1,11 +1,14 @@
 package de.yanneckreiss.mlkittutorial.ui.components
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,16 +22,15 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import de.yanneckreiss.mlkittutorial.entry.data.local.UtilityType
 import de.yanneckreiss.mlkittutorial.entry.domain.model.ChartDataPoint
 import java.util.Locale
 import kotlin.math.roundToInt
 
+@SuppressLint("ComposeModifierReused")
 @Composable
 fun InteractiveUtilityChart(
     dataPoints: List<ChartDataPoint>,
@@ -51,16 +53,15 @@ fun InteractiveUtilityChart(
         return
     }
 
-    // Animation progress for smooth line drawing
     val animProgress = remember(dataPoints, utilityType) { Animatable(0f) }
     LaunchedEffect(dataPoints, utilityType) {
         animProgress.snapTo(0f)
-        animProgress.animateTo(1f, animationSpec = tween(durationMillis = 650))
+        animProgress.animateTo(1f, animationSpec = tween(durationMillis = 600))
     }
 
     var selectedIndex by remember(dataPoints) { mutableStateOf<Int?>(null) }
-    val primaryColor = utilityType.composeColor
-    val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
     val onSurface = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
 
@@ -70,13 +71,76 @@ fun InteractiveUtilityChart(
     val avgValue = remember(values) { if (values.isNotEmpty()) values.average() else 0.0 }
 
     Column(modifier = modifier.fillMaxWidth()) {
+        // Visual Indicator Legend: Actual vs Estimated
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Actual Entry Indicator (Clean Solid Dot - NOT Red)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(primaryColor, shape = MaterialTheme.shapes.extraSmall)
+                    )
+                    Text(
+                        text = "Actual Record",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // Estimated / Averaged Indicator (Clean Hollow Ring)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                    ) {
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            drawCircle(
+                                color = primaryColor,
+                                radius = size.minDimension / 2f,
+                                style = Stroke(width = 1.5.dp.toPx())
+                            )
+                        }
+                    }
+                    Text(
+                        text = "Estimated / Avg",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Text(
+                text = "Avg: ${String.format(Locale.US, "%.1f", avgValue)} ${utilityType.defaultUnit}",
+                style = MaterialTheme.typography.labelSmall,
+                color = primaryColor,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
         // Active point tooltip inspection card
         val activePoint = selectedIndex?.let { dataPoints.getOrNull(it) } ?: dataPoints.lastOrNull()
         if (activePoint != null) {
             Surface(
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                tonalElevation = 2.dp,
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
@@ -84,29 +148,50 @@ fun InteractiveUtilityChart(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(
-                            text = "📅 ${activePoint.dateString.ifEmpty { activePoint.label }}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = onSurfaceVariant
-                        )
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
-                                text = "${String.format(Locale.US, "%.1f", activePoint.value)} ${utilityType.defaultUnit} used",
+                                text = activePoint.dateString.ifEmpty { activePoint.label },
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = onSurface
+                            )
+
+                            // Status Pill: Actual vs Estimated
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = if (activePoint.isActual) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                            ) {
+                                Text(
+                                    text = if (activePoint.isActual) "Actual" else "Estimated",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    color = if (activePoint.isActual) MaterialTheme.colorScheme.onPrimaryContainer else onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "${String.format(Locale.US, "%.1f", activePoint.value)} ${utilityType.defaultUnit}",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = primaryColor
                             )
                             if (activePoint.meterReading > 0.0) {
                                 Text(
-                                    text = "(Meter: ${String.format(Locale.US, "%.0f", activePoint.meterReading)})",
+                                    text = "(Rdg: ${String.format(Locale.US, "%.0f", activePoint.meterReading)})",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = onSurfaceVariant
                                 )
@@ -115,33 +200,38 @@ fun InteractiveUtilityChart(
                     }
 
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            shape = MaterialTheme.shapes.extraSmall,
-                            color = if (activePoint.weatherScore >= 7.0) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant
                         ) {
                             Text(
                                 text = "Score: ${String.format(Locale.US, "%.1f", activePoint.weatherScore)}",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                color = if (activePoint.weatherScore >= 7.0) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                                color = onSurfaceVariant
                             )
                         }
 
+                        // Yellow warning or Red error for anomalies ONLY
                         if (activePoint.isAnomaly) {
+                            val isCriticalSpike = activePoint.spikePercentage > 40
+                            val anomalyBg = if (isCriticalSpike) MaterialTheme.colorScheme.errorContainer else Color(0xFFFFF8E1)
+                            val anomalyText = if (isCriticalSpike) MaterialTheme.colorScheme.onErrorContainer else Color(0xFFF57F17)
+
                             Surface(
-                                shape = MaterialTheme.shapes.extraSmall,
-                                color = MaterialTheme.colorScheme.error
+                                shape = RoundedCornerShape(4.dp),
+                                color = anomalyBg
                             ) {
                                 Text(
-                                    text = "⚠️ SPIKE",
+                                    text = "+${activePoint.spikePercentage}% SPIKE",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    color = MaterialTheme.colorScheme.onError
+                                    color = anomalyText
                                 )
                             }
                         }
@@ -182,7 +272,7 @@ fun InteractiveUtilityChart(
 
                 val stepX = width / (pointCount - 1)
 
-                // 1. Draw horizontal grid lines (0%, 50%, 100%)
+                // 1. Draw horizontal grid lines (Grayscale)
                 val gridLines = listOf(0.0, maxValue * 0.5, maxValue)
                 for (gridVal in gridLines) {
                     val y = (chartHeight - ((gridVal / maxValue) * chartHeight)).toFloat()
@@ -191,7 +281,7 @@ fun InteractiveUtilityChart(
                         start = Offset(0f, y),
                         end = Offset(width, y),
                         strokeWidth = 1.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f))
                     )
                 }
 
@@ -202,7 +292,7 @@ fun InteractiveUtilityChart(
                     start = Offset(0f, avgY),
                     end = Offset(width, avgY),
                     strokeWidth = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(16f, 8f))
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 6f))
                 )
 
                 // 3. Compute Coordinates
@@ -242,8 +332,8 @@ fun InteractiveUtilityChart(
                     path = fillPath,
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            primaryColor.copy(alpha = 0.35f),
-                            primaryColor.copy(alpha = 0.03f)
+                            primaryColor.copy(alpha = 0.25f),
+                            primaryColor.copy(alpha = 0.02f)
                         ),
                         startY = 0f,
                         endY = chartHeight
@@ -255,54 +345,70 @@ fun InteractiveUtilityChart(
                     path = strokePath,
                     color = primaryColor,
                     style = Stroke(
-                        width = 3.dp.toPx(),
+                        width = 2.5.dp.toPx(),
                         cap = StrokeCap.Round
                     )
                 )
 
-                // 5. Draw Data Points, Anomalies, and Selected Inspection Cursor
+                // 5. Draw Visual Indicators: Solid Dot for Actual vs Hollow Ring for Estimated
+                // RECORDED ENTRIES ARE CLEAN SOLID DOTS (NOT RED BOLD CIRCLES!)
                 points.forEachIndexed { i, pt ->
                     val dp = dataPoints[i]
                     val isSelected = (selectedIndex == i)
 
                     if (dp.isAnomaly) {
-                        // Pulsing outer halo for anomaly spike
+                        // Warning halo for anomaly spikes (Yellow or Red warning ONLY for real anomalies)
+                        val warningColor = if (dp.spikePercentage > 40) Color(0xFFD32F2F) else Color(0xFFF57F17)
                         drawCircle(
-                            color = Color.Red.copy(alpha = 0.35f),
-                            radius = 11.dp.toPx(),
+                            color = warningColor.copy(alpha = 0.25f),
+                            radius = 8.dp.toPx(),
                             center = pt
                         )
                         drawCircle(
-                            color = Color.Red,
-                            radius = 6.dp.toPx(),
+                            color = warningColor,
+                            radius = 4.dp.toPx(),
                             center = pt
                         )
                     } else if (isSelected) {
                         drawCircle(
                             color = primaryColor,
-                            radius = 7.dp.toPx(),
+                            radius = 6.dp.toPx(),
                             center = pt
                         )
                         drawCircle(
                             color = Color.White,
-                            radius = 3.5.dp.toPx(),
+                            radius = 2.5.dp.toPx(),
                             center = pt
                         )
-                    } else if (pointCount <= 14) {
+                    } else if (dp.isActual) {
+                        // CLEAN RECORDED ENTRY DOT (NOT RED BOLD CIRCLES!)
                         drawCircle(
                             color = primaryColor,
-                            radius = 3.5.dp.toPx(),
+                            radius = 4.dp.toPx(),
                             center = pt
+                        )
+                        drawCircle(
+                            color = Color.White,
+                            radius = 1.8.dp.toPx(),
+                            center = pt
+                        )
+                    } else {
+                        // Hollow ring for Estimated/Averaged points
+                        drawCircle(
+                            color = primaryColor.copy(alpha = 0.7f),
+                            radius = 3.5.dp.toPx(),
+                            center = pt,
+                            style = Stroke(width = 1.4.dp.toPx())
                         )
                     }
                 }
 
-                // If user selected a specific point, draw a vertical scrubbing cursor
+                // Vertical scrubbing cursor
                 selectedIndex?.let { idx ->
                     val selectedPt = points.getOrNull(idx)
                     if (selectedPt != null) {
                         drawLine(
-                            color = onSurface.copy(alpha = 0.6f),
+                            color = onSurface.copy(alpha = 0.5f),
                             start = Offset(selectedPt.x, 0f),
                             end = Offset(selectedPt.x, chartHeight),
                             strokeWidth = 1.5.dp.toPx(),
@@ -313,7 +419,7 @@ fun InteractiveUtilityChart(
             }
         }
 
-        // X-Axis Labels (first, middle, last)
+        // X-Axis Labels
         Row(
             modifier = Modifier
                 .fillMaxWidth()

@@ -1,7 +1,6 @@
 package de.yanneckreiss.mlkittutorial.view
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -10,8 +9,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoGraph
-import androidx.compose.material.icons.filled.Dataset
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +26,7 @@ import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
 import de.yanneckreiss.mlkittutorial.entry.data.local.UtilityType
 import de.yanneckreiss.mlkittutorial.entry.domain.model.ChartDataPoint
 import de.yanneckreiss.mlkittutorial.entry.domain.model.TrendDirection
+import de.yanneckreiss.mlkittutorial.entry.domain.model.TrendSummary
 import de.yanneckreiss.mlkittutorial.ui.components.*
 
 @SuppressLint("ComposeModifierMissing")
@@ -48,6 +49,7 @@ fun EntriesHistoryScreen(
     val trendSummary by viewModel.trendSummary.collectAsStateWithLifecycle()
     val consumptionVelocity by viewModel.consumptionVelocity.collectAsStateWithLifecycle()
     val activeAnomalies by viewModel.activeAnomalies.collectAsStateWithLifecycle()
+    val dailyAverage by viewModel.utilityDailyAverage.collectAsStateWithLifecycle()
     val selectedEntryForDetail by viewModel.selectedEntryForDetail.collectAsStateWithLifecycle()
     val showAddDialog by viewModel.showAddDialog.collectAsStateWithLifecycle()
 
@@ -64,7 +66,7 @@ fun EntriesHistoryScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Units Consumed & Weather Correlation",
+                            text = "User Recorded Readings & Analytics",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -76,18 +78,20 @@ fun EntriesHistoryScreen(
                     }
                 },
                 actions = {
-                    // Seed Sample Data Button
-                    IconButton(
-                        onClick = { viewModel.seedDemoData() },
-                        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)
-                    ) {
-                        Icon(imageVector = Icons.Default.Dataset, contentDescription = "Seed Sample Data")
+                    // Clear Ledger / Remove All Recorded Data Button
+                    if (allRawEntries.isNotEmpty()) {
+                        IconButton(
+                            onClick = { viewModel.clearAllData() },
+                            colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(imageVector = Icons.Default.DeleteSweep, contentDescription = "Clear All Records")
+                        }
                     }
 
                     // Run Anomaly Scan
                     IconButton(
                         onClick = { viewModel.triggerAnomalyWorker(context) },
-                        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.tertiary)
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
                     ) {
                         Icon(imageVector = Icons.Default.AutoGraph, contentDescription = "Run Anomaly Detection")
                     }
@@ -120,7 +124,6 @@ fun EntriesHistoryScreen(
         ) {
             if (allRawEntries.isEmpty()) {
                 EmptyTrackingState(
-                    onSeedData = { viewModel.seedDemoData() },
                     onAddReading = { viewModel.setShowAddDialog(true) }
                 )
             } else {
@@ -128,7 +131,7 @@ fun EntriesHistoryScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
                     contentPadding = PaddingValues(top = 8.dp, bottom = 88.dp)
                 ) {
                     // 1. Proactive Anomaly Alerts (if any)
@@ -141,7 +144,7 @@ fun EntriesHistoryScreen(
                         }
                     }
 
-                    // 2. Units Consumption Velocity Card
+                    // 2. Units Consumption Velocity & Forecast Card
                     item(key = "consumption_velocity_card") {
                         ConsumptionVelocityCard(velocity = consumptionVelocity)
                     }
@@ -169,7 +172,7 @@ fun EntriesHistoryScreen(
                         )
                     }
 
-                    // 5. Sticky Table Headers (Date, Utility, Meter Reading, Units Used, Weather)
+                    // 5. Sticky Table Headers
                     item(key = "table_headers") {
                         UtilityTableHeaders(
                             activeSort = selectedSortOption,
@@ -202,6 +205,7 @@ fun EntriesHistoryScreen(
                             UtilityTableRow(
                                 entry = entry,
                                 isEvenRow = index % 2 == 0,
+                                baselineAverage = dailyAverage,
                                 onOpenFullDetail = { viewModel.openDetailSheet(it) },
                                 onDeleteEntry = { viewModel.deleteEntry(it) }
                             )
@@ -234,22 +238,24 @@ fun EntriesHistoryScreen(
 
 @Composable
 private fun AnalyticsSection(
-    trendSummary: de.yanneckreiss.mlkittutorial.entry.domain.model.TrendSummary?,
+    trendSummary: TrendSummary?,
     chartData: List<ChartDataPoint>,
     utilityType: UtilityType
 ) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Trend Headline & Indicator Pill
+            // Header Row: Clean Title + Trend Pill
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -257,13 +263,19 @@ private fun AnalyticsSection(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(text = utilityType.emoji, style = MaterialTheme.typography.titleMedium)
+                    Icon(
+                        imageVector = Icons.Default.ShowChart,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
                     Text(
-                        text = "${utilityType.displayName} Usage Trend",
+                        text = "${utilityType.displayName.uppercase()} USAGE TREND",
                         style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -272,12 +284,14 @@ private fun AnalyticsSection(
                     val isDecreasing = trendSummary.direction == TrendDirection.DECREASING
 
                     val pillBg = when {
-                        isIncreasing -> MaterialTheme.colorScheme.errorContainer
+                        isIncreasing && trendSummary.percentageChange > 20.0 -> MaterialTheme.colorScheme.errorContainer
+                        isIncreasing -> Color(0xFFFFF8E1)
                         isDecreasing -> Color(0xFFE8F5E9)
                         else -> MaterialTheme.colorScheme.surfaceVariant
                     }
                     val pillText = when {
-                        isIncreasing -> MaterialTheme.colorScheme.onErrorContainer
+                        isIncreasing && trendSummary.percentageChange > 20.0 -> MaterialTheme.colorScheme.onErrorContainer
+                        isIncreasing -> Color(0xFFF57F17)
                         isDecreasing -> Color(0xFF2E7D32)
                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
@@ -302,16 +316,44 @@ private fun AnalyticsSection(
                 }
             }
 
-            // Summary Subtitle focused on Units Used
+            // Expressive Stat Grid: Average, Total, Peak, Lowest
             if (trendSummary != null) {
-                Text(
-                    text = "Average: ${trendSummary.averageUnitsUsed} ${trendSummary.unit} • Total: ${trendSummary.totalPeriodUnits} ${trendSummary.unit} • Peak: ${trendSummary.peakUnits} ${trendSummary.unit} (${trendSummary.comparisonPeriodLabel})",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnalyticsMetricCard(
+                            label = "DAILY AVERAGE",
+                            value = "${trendSummary.averageUnitsUsed} ${trendSummary.unit}",
+                            modifier = Modifier.weight(1f)
+                        )
+                        AnalyticsMetricCard(
+                            label = "PERIOD TOTAL",
+                            value = "${trendSummary.totalPeriodUnits} ${trendSummary.unit}",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnalyticsMetricCard(
+                            label = "PEAK RECORD",
+                            value = "${trendSummary.peakUnits} ${trendSummary.unit}",
+                            modifier = Modifier.weight(1f)
+                        )
+                        AnalyticsMetricCard(
+                            label = "MIN RECORD",
+                            value = "${trendSummary.lowestUnits} ${trendSummary.unit}",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
             }
 
-            // Interactive Chart
+            // Interactive Trend Chart
             InteractiveUtilityChart(
                 dataPoints = chartData,
                 utilityType = utilityType,
@@ -322,8 +364,38 @@ private fun AnalyticsSection(
 }
 
 @Composable
+private fun AnalyticsMetricCard(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
 private fun EmptyTrackingState(
-    onSeedData: () -> Unit,
     onAddReading: () -> Unit
 ) {
     Box(
@@ -344,32 +416,30 @@ private fun EmptyTrackingState(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(text = "📊", style = MaterialTheme.typography.displaySmall)
+                Icon(
+                    imageVector = Icons.Default.ShowChart,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp)
+                )
 
                 Text(
-                    text = "No Utility Entries Yet",
+                    text = "No Utility Entries Recorded",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    text = "Track Electricity (kWh), Water (L), and Propane Gas (kg) in high-density tables with interactive charts and automated weather correlation analysis.",
+                    text = "Log your Electricity (kWh), Water (L), and Propane Gas (kg) readings using camera photo scans or manual entries to generate analytics and trends.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Button(
-                    onClick = onSeedData,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Load Realistic Demo Records (14 Days)")
-                }
-
-                OutlinedButton(
                     onClick = onAddReading,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Record First Manual Entry")
+                    Text("Log First Utility Reading")
                 }
             }
         }

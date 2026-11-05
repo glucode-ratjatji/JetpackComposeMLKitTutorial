@@ -45,13 +45,22 @@ data class Entry(
 
     /**
      * Infers utility type (Electricity, Water, or Gas) from description tags or keywords,
-     * defaulting to Electricity if unspecified in legacy records.
+     * defaulting to Electricity if unspecified.
      */
     val detectedUtilityType: UtilityType
         get() = UtilityType.fromString(description)
 
     val unitLabel: String
         get() = detectedUtilityType.defaultUnit
+
+    /**
+     * Visual indicator: distinguishes actual recorded entries from estimated/averaged data.
+     */
+    val isEstimated: Boolean
+        get() = description.contains("[Estimated]", ignoreCase = true)
+
+    val isActual: Boolean
+        get() = !isEstimated
 }
 
 fun LocalDate.toStartOfWeek(): LocalDate {

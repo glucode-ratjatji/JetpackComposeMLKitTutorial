@@ -62,6 +62,16 @@ class EntryViewModel @Inject constructor(
 
     private val _dismissedAnomalyIds = MutableStateFlow<Set<String>>(emptySet())
 
+    // Baseline average for the active utility filter (e.g. 9.0 kWh for electricity, 260 L for water)
+    val utilityDailyAverage: StateFlow<Double> = combine(
+        visibleEntries,
+        _selectedUtilityFilter
+    ) { entries, filter ->
+        val targetType = filter ?: UtilityType.ELECTRICITY
+        val matching = entries.filter { it.detectedUtilityType == targetType }
+        if (matching.isNotEmpty()) matching.map { it.unitsUsed }.average() else 9.0
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 9.0)
+
     // Filtered and Sorted entries reading directly from existing Room database records
     val filteredAndSortedEntries: StateFlow<List<Entry>> = combine(
         visibleEntries,
@@ -103,7 +113,7 @@ class EntryViewModel @Inject constructor(
         buildChartDataPoints(sortedChronological, horizon)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Trend Summary calculations based on Units Used (cost removed)
+    // Trend Summary calculations based on Units Used
     val trendSummary: StateFlow<TrendSummary?> = combine(
         chartData,
         _selectedUtilityFilter,
@@ -164,7 +174,7 @@ class EntryViewModel @Inject constructor(
         val daysRemaining = (maxDays - currentDay).coerceAtLeast(1)
 
         val totalUnitsMonthToDate = matchingEntries.sumOf { it.unitsUsed }
-        val dailyUnitsBurnRate = if (currentDay > 0) totalUnitsMonthToDate / currentDay else 14.0
+        val dailyUnitsBurnRate = if (currentDay > 0) totalUnitsMonthToDate / currentDay else 9.0
         val projectedTotalUnits = totalUnitsMonthToDate + (dailyUnitsBurnRate * daysRemaining)
 
         ConsumptionVelocity(
@@ -230,10 +240,14 @@ class EntryViewModel @Inject constructor(
         _dismissedAnomalyIds.value = _dismissedAnomalyIds.value + alert.id
     }
 
-    fun seedDemoData() {
+    fun clearAllData() {
         viewModelScope.launch {
-            repository.seedSampleData()
+            repository.deleteAllEntries()
         }
+    }
+
+    fun seedDemoData() {
+        // No mock data insertion
     }
 
     fun deleteEntry(entry: Entry) {
@@ -264,7 +278,7 @@ class EntryViewModel @Inject constructor(
             val dateStr = sdf.format(Date(now))
             val cal = Calendar.getInstance()
 
-            val taggedDescription = "[${type.displayName}] $description".trim()
+            val taggedDescription = "[${type.displayName}] [Actual] $description".trim()
 
             val newEntry = Entry(
                 timestamp = now.toString(),
@@ -288,6 +302,40 @@ class EntryViewModel @Inject constructor(
         }
     }
 
+    fun addWaterReadingWithEstimation(
+        readingInLitres: Double,
+        unitsConsumed: Double,
+        previousReading: Double,
+        photoUri: String
+    ) {
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val dateStr = sdf.format(Date(now))
+            val cal = Calendar.getInstance()
+
+            val newEntry = Entry(
+                timestamp = now.toString(),
+                date = dateStr,
+                weekNumber = cal.get(Calendar.WEEK_OF_YEAR),
+                monthKey = (cal.get(Calendar.MONTH) + 1).toString(),
+                meterReading = readingInLitres,
+                previousReadingValue = previousReading,
+                unitsConsumedSinceLastVisit = unitsConsumed,
+                daysElapsedSinceLastReading = 1,
+                weatherScore = 4.0,
+                temperatureCelsius = 22.0,
+                cloudCoverage = 20.0,
+                precipitation = 0.0,
+                windSpeedKms = 10.0,
+                visibilityKms = 10.0,
+                imageUri = photoUri,
+                description = "[Water] [Actual] Water Meter Photo Log"
+            )
+            repository.insertEntry(newEntry)
+        }
+    }
+
     /**
      * Backward-compatible method used by ML Kit Camera Screen
      */
@@ -299,7 +347,11 @@ class EntryViewModel @Inject constructor(
             val dateStr = sdf.format(Date(now))
             val cal = Calendar.getInstance()
 
-            val taggedDescription = if (description.contains("[Electricity]")) description else "[Electricity] $description"
+            val taggedDescription = if (description.contains("[Electricity]")) {
+                description
+            } else {
+                "[Electricity] [Actual] $description"
+            }
 
             val newEntry = Entry(
                 timestamp = now.toString(),
@@ -328,23 +380,31 @@ class EntryViewModel @Inject constructor(
     ): List<ChartDataPoint> {
         if (entries.isEmpty()) return emptyList()
 
+        val baselineAvg = entries.map { it.unitsUsed }.average()
+
         return when (horizon) {
             TimeHorizon.DAILY -> {
                 val byDate = entries.groupBy { it.date }
-                byDate.entries.toList().takeLast(14).map { (date, items) ->
+                byDate.entries.toList().takeLast(17).map { (date, items) ->
                     val totalUnitsUsed = items.sumOf { it.unitsUsed }
                     val latestReading = items.lastOrNull()?.meterReading ?: 0.0
                     val avgScore = items.map { it.weatherScore }.average()
                     val temp = items.firstOrNull()?.temperatureCelsius ?: 20.0
-                    val isSpike = totalUnitsUsed > (entries.map { it.unitsUsed }.average() * 1.6)
+                    val isEstimatedPoint = items.any { it.isEstimated }
+                    val isSpike = baselineAvg > 0.0 && totalUnitsUsed > (baselineAvg * 1.25)
+                    val spikePct = if (baselineAvg > 0.0) {
+                        (((totalUnitsUsed - baselineAvg) / baselineAvg) * 100).toInt()
+                    } else 0
 
                     ChartDataPoint(
                         label = date.takeLast(5),
                         value = totalUnitsUsed,
                         meterReading = latestReading,
+                        isEstimated = isEstimatedPoint,
                         weatherScore = avgScore,
                         temperatureCelsius = temp,
                         isAnomaly = isSpike,
+                        spikePercentage = spikePct,
                         dateString = date
                     )
                 }
@@ -356,11 +416,13 @@ class EntryViewModel @Inject constructor(
                     val latestReading = items.lastOrNull()?.meterReading ?: 0.0
                     val avgScore = items.map { it.weatherScore }.average()
                     val avgTemp = items.map { it.temperatureCelsius }.average()
+                    val isEstimatedPoint = items.all { it.isEstimated }
 
                     ChartDataPoint(
                         label = "W$weekNum",
                         value = totalUnitsUsed,
                         meterReading = latestReading,
+                        isEstimated = isEstimatedPoint,
                         weatherScore = avgScore,
                         temperatureCelsius = avgTemp,
                         isAnomaly = false,
@@ -375,6 +437,7 @@ class EntryViewModel @Inject constructor(
                     val latestReading = items.lastOrNull()?.meterReading ?: 0.0
                     val avgScore = items.map { it.weatherScore }.average()
                     val avgTemp = items.map { it.temperatureCelsius }.average()
+                    val isEstimatedPoint = items.all { it.isEstimated }
 
                     val monthName = when (monthKey.toIntOrNull()) {
                         1 -> "Jan"
@@ -396,6 +459,7 @@ class EntryViewModel @Inject constructor(
                         label = monthName,
                         value = totalUnitsUsed,
                         meterReading = latestReading,
+                        isEstimated = isEstimatedPoint,
                         weatherScore = avgScore,
                         temperatureCelsius = avgTemp,
                         isAnomaly = false,

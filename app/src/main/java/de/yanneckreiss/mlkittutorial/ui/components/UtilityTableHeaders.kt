@@ -33,58 +33,58 @@ fun UtilityTableHeaders(
                 .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Column 1: Date (Weight 1.0)
+            // Column 1: Date & Status (Weight 1.1)
             HeaderCell(
                 title = "Date",
                 sortOption = SortOption.DATE,
                 activeSort = activeSort,
                 sortDirection = sortDirection,
                 onSortChange = onSortChange,
-                modifier = Modifier.weight(1.0f),
+                modifier = Modifier.weight(1.1f),
                 alignment = Alignment.Start
             )
 
-            // Column 2: Utility (Weight 1.0)
+            // Column 2: Utility (Weight 0.95)
             HeaderCell(
                 title = "Utility",
                 sortOption = SortOption.UTILITY,
                 activeSort = activeSort,
                 sortDirection = sortDirection,
                 onSortChange = onSortChange,
-                modifier = Modifier.weight(1.0f),
+                modifier = Modifier.weight(0.95f),
                 alignment = Alignment.Start
             )
 
-            // Column 3: Meter Reading (Weight 1.1)
+            // Column 3: Meter Reading (Weight 1.05)
             HeaderCell(
                 title = "Meter Rdg",
                 sortOption = SortOption.METER_READING,
                 activeSort = activeSort,
                 sortDirection = sortDirection,
                 onSortChange = onSortChange,
-                modifier = Modifier.weight(1.1f),
+                modifier = Modifier.weight(1.05f),
                 alignment = Alignment.End
             )
 
-            // Column 4: Units Used (Weight 1.2)
+            // Column 4: Units Used (Weight 1.25)
             HeaderCell(
                 title = "Units Used",
                 sortOption = SortOption.UNITS_USED,
                 activeSort = activeSort,
                 sortDirection = sortDirection,
                 onSortChange = onSortChange,
-                modifier = Modifier.weight(1.2f),
+                modifier = Modifier.weight(1.25f),
                 alignment = Alignment.End
             )
 
-            // Column 5: Weather Score (Weight 0.9)
+            // Column 5: Weather Score (Weight 0.85)
             HeaderCell(
                 title = "Weather",
                 sortOption = SortOption.WEATHER_SCORE,
                 activeSort = activeSort,
                 sortDirection = sortDirection,
                 onSortChange = onSortChange,
-                modifier = Modifier.weight(0.9f),
+                modifier = Modifier.weight(0.85f),
                 alignment = Alignment.End
             )
         }

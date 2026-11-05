@@ -9,6 +9,7 @@ interface IEntryRepository {
     suspend fun insertList(entries: List<Entry>)
     suspend fun deleteEntry(entry: Entry): Flow<List<Entry>>
     suspend fun deleteById(id: Int)
+    suspend fun deleteAllEntries()
     suspend fun updateEntry(entry: Entry)
     suspend fun seedSampleData()
 }

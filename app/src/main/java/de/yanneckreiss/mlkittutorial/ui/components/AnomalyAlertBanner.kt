@@ -4,10 +4,14 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import de.yanneckreiss.mlkittutorial.entry.domain.model.AnomalyAlert
@@ -42,11 +46,15 @@ private fun AnomalyItemCard(
     var expanded by remember { mutableStateOf(false) }
 
     val isCritical = anomaly.severity == AnomalySeverity.CRITICAL
-    val containerColor = if (isCritical) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.tertiaryContainer
-    val onContainerColor = if (isCritical) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer
+
+    // Intentional color selection: Yellow for warning, Red for high error
+    val containerColor = if (isCritical) MaterialTheme.colorScheme.errorContainer else Color(0xFFFFF8E1)
+    val onContainerColor = if (isCritical) MaterialTheme.colorScheme.onErrorContainer else Color(0xFF5D4037)
+    val iconColor = if (isCritical) MaterialTheme.colorScheme.error else Color(0xFFF57F17)
+    val icon = if (isCritical) Icons.Default.Error else Icons.Default.Warning
 
     Card(
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = containerColor),
         modifier = Modifier
             .fillMaxWidth()
@@ -68,9 +76,11 @@ private fun AnomalyItemCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(
-                        text = if (isCritical) "🚨" else "⚠️",
-                        style = MaterialTheme.typography.titleMedium
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconColor,
+                        modifier = Modifier.size(20.dp)
                     )
                     Text(
                         text = anomaly.title,
@@ -107,7 +117,7 @@ private fun AnomalyItemCard(
                     ) {
                         Column(modifier = Modifier.padding(10.dp)) {
                             Text(
-                                text = "💡 Actionable Mitigation Advice:",
+                                text = "Mitigation Action:",
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary

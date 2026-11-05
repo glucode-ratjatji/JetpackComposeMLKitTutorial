@@ -3,9 +3,9 @@ package de.yanneckreiss.mlkittutorial.entry.domain.model
 import de.yanneckreiss.mlkittutorial.entry.data.local.UtilityType
 
 enum class TimeHorizon(val label: String, val subtitle: String) {
-    DAILY("Daily", "Day-by-Day (14d)"),
-    WEEKLY("Weekly", "Past 8 Weeks"),
-    MONTHLY("Monthly", "6 Months Trajectory")
+    DAILY("Daily", "Day-by-Day (17d)"),
+    WEEKLY("Weekly", "Weekly Averages"),
+    MONTHLY("Monthly", "Monthly Totals")
 }
 
 enum class SortOption(val displayName: String) {
@@ -27,12 +27,17 @@ data class ChartDataPoint(
     val label: String,
     val value: Double, // Units used
     val meterReading: Double = 0.0,
+    val isEstimated: Boolean = false, // Visual indicator: true = averaged/estimated, false = actual recorded
     val secondaryValue: Double? = null,
     val weatherScore: Double = 0.0,
     val temperatureCelsius: Double = 20.0,
-    val isAnomaly: Boolean = false,
+    val isAnomaly: Boolean = false, // Exceeds baseline average by >25%
+    val spikePercentage: Int = 0,
     val dateString: String = ""
-)
+) {
+    val isActual: Boolean
+        get() = !isEstimated
+}
 
 enum class TrendDirection {
     INCREASING, // Usage up

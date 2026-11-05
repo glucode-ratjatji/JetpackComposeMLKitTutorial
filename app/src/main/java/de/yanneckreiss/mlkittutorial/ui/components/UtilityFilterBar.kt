@@ -6,7 +6,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,12 +57,24 @@ fun UtilityFilterBar(
                 label = { Text("All Utilities") }
             )
 
-            // Utility Type specific chips
+            // Utility Type specific chips with clean M3 Icons (no emojis!)
             UtilityType.values().forEach { type ->
+                val icon = when (type) {
+                    UtilityType.ELECTRICITY -> Icons.Default.FlashOn
+                    UtilityType.WATER -> Icons.Default.WaterDrop
+                    UtilityType.GAS -> Icons.Default.LocalFireDepartment
+                }
                 FilterChip(
                     selected = selectedUtility == type,
                     onClick = { onSelectUtility(type) },
-                    label = { Text("${type.emoji} ${type.displayName}") }
+                    leadingIcon = {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    },
+                    label = { Text(type.displayName) }
                 )
             }
 
