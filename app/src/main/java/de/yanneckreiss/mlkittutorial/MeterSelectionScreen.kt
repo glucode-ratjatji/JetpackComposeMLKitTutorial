@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -105,6 +106,7 @@ fun MeterSelectionScreen(
             // Electricity Card
             MeterNavigationCard(
                 icon = Icons.Default.FlashOn,
+                color = Color.Yellow,
                 header = "Log Electricity Meter",
                 description = "Scan meter camera view or enter kilowatt-hour (kWh) readings.",
                 onClick = onNavigateToElectricity
@@ -113,15 +115,17 @@ fun MeterSelectionScreen(
             // Water Card
             MeterNavigationCard(
                 icon = Icons.Default.WaterDrop,
+                color = Color.Cyan,
                 header = "Log Water Meter",
                 description = "Snap water meter photo & input reading to estimate usage.",
                 onClick = onNavigateToWater
             )
             // Gas Cylinder Card
             MeterNavigationCard(
-                emoji = "♨️",
+                icon = Icons.Default.LocalFireDepartment,
+                color = Color.Red,
                 header = "Gas Cylinder & Usage Tracker",
-                description = "Track propane cylinder exchanges (4, 9, 14, 48kg) & annual gas usage.",
+                description = "Track propane cylinder exchanges & annual gas usage.",
                 onClick = onNavigateToGas
             )
         }
