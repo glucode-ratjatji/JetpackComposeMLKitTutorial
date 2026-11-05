@@ -1,19 +1,23 @@
 package de.yanneckreiss.mlkittutorial
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+@SuppressLint("ComposeParameterOrder")
 @Composable
 fun MeterNavigationCard(
     icon: ImageVector,
+    color: Color = MaterialTheme.colorScheme.primary,
     header: String,
     description: String,
     onClick: () -> Unit,
@@ -47,7 +51,7 @@ fun MeterNavigationCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
+                        tint = color,
                         modifier = Modifier.size(22.dp)
                     )
                 }
