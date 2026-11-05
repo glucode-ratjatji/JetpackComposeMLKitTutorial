@@ -12,7 +12,7 @@ import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
 import de.yanneckreiss.mlkittutorial.gas.ui.GasCylinderTrackerScreen
 import de.yanneckreiss.mlkittutorial.ui.MainScreen
 import de.yanneckreiss.mlkittutorial.view.EntriesHistoryScreen
-import de.yanneckreiss.mlkittutorial.view.WaterTrackerScreen
+//import de.yanneckreiss.mlkittutorial.view.WaterTrackerScreen
 
 object AppRoutes {
     const val METER_SELECTION = "meter_selection"
@@ -66,10 +66,11 @@ fun AppNavHost(viewModel: EntryViewModel = hiltViewModel()) {
 
         // Water Tracker Screen (CameraX Photo + Manual Input + Estimation)
         composable(AppRoutes.WATER_METER) {
-            WaterTrackerScreen(
-                viewModel = viewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
+            //TO-DO: Add Water Scanning Screen 
+//            WaterTrackerScreen(
+//                viewModel = viewModel,
+//                onNavigateBack = { navController.popBackStack() }
+//            )
         }
 
         // Gas Cylinder & Meter Logging Screen
